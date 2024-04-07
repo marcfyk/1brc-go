@@ -18,5 +18,5 @@ As the challenge's parameters and constraints are well defined, aggressive liber
 in regards to error handling in favor for performance as this is performance driven challenge as opposed to
 a production application with robust error handling requirements.
 
-A [CHANGELOG](https://github.com/marcfyk/1brc-go/CHANGELOG.md) is maintained to track all optimizations made
+A [CHANGELOG](https://github.com/marcfyk/1brc-go/blob/master/CHANGELOG.md) is maintained to track all optimizations made
 to the solution.
