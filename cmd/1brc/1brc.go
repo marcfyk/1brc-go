@@ -84,12 +84,11 @@ func (s StationInfo) GenerateReport() string {
 
 // ParseMeasurement parses a line from the input data and returns a Measurement.
 func ParseMeasurement(line string) Measurement {
-	tokens := strings.Split(line, ";")
-	station := tokens[0]
-	temperature, _ := strconv.ParseFloat(tokens[1], 64)
+	s, tStr, _ := strings.Cut(line, ";")
+	t, _ := strconv.ParseFloat(tStr, 64)
 	return Measurement{
-		Station:     Station(station),
-		Temperature: Temperature(temperature),
+		Station:     Station(s),
+		Temperature: Temperature(t),
 	}
 }
 
