@@ -12,8 +12,28 @@ import (
 // Station contains the station name as defined in the data input.
 type Station string
 
-// Temperature contains the float64 temperature as defined in the data input.
-type Temperature float64
+// Temperature contains an integer representation of temperature.
+// |Temperature % 10| is the fractional component of the temperature.
+// Temperature / 10 is the whole number component of the temperature.
+type Temperature int
+
+// String returns a string representation of the Temperature,
+// with as a number with 1 decimal placing.
+func (t Temperature) String() string {
+	isNegative := t < 0
+	whole := t / 10
+	frac := t % 10
+	if isNegative {
+		if whole == 0 {
+			return fmt.Sprintf("-%d.%d", whole, -frac)
+		} else if frac < 0 {
+			return fmt.Sprintf("%d.%d", whole, -frac)
+		} else {
+			return fmt.Sprintf("%d.%d", whole, frac)
+		}
+	}
+	return fmt.Sprintf("%d.%d", whole, frac)
+}
 
 // Measurement is a struct containing a station name and it's recorded temperature.
 // It is equivalent to a single line in the data input.
@@ -85,7 +105,16 @@ func (s StationInfo) GenerateReport() string {
 // ParseMeasurement parses a line from the input data and returns a Measurement.
 func ParseMeasurement(line string) Measurement {
 	s, tStr, _ := strings.Cut(line, ";")
-	t, _ := strconv.ParseFloat(tStr, 64)
+	isNegative := tStr[0] == '-'
+	whole, fraction, _ := strings.Cut(tStr, ".")
+	w, _ := strconv.Atoi(whole)
+	f, _ := strconv.Atoi(fraction)
+	t := w * 10
+	if isNegative {
+		t -= f
+	} else {
+		t += f
+	}
 	return Measurement{
 		Station:     Station(s),
 		Temperature: Temperature(t),
@@ -96,7 +125,13 @@ func ParseMeasurement(line string) Measurement {
 // This adheres to a single line in the output to stdout.
 func StationReport(station Station, info Info) string {
 	mean := info.Sum / Temperature(info.Count)
-	return fmt.Sprintf("%s;%.1f;%.1f;%.1f", station, info.Min, mean, info.Max)
+	return fmt.Sprintf(
+		"%s;%s;%s;%s",
+		station,
+		info.Min,
+		mean,
+		info.Max,
+	)
 }
 
 func main() {

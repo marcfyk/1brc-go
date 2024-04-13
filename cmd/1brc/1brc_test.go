@@ -5,13 +5,59 @@ import (
 	"testing"
 )
 
+func TestTemperatureString(t *testing.T) {
+	tests := []struct {
+		name     string
+		t        Temperature
+		expected string
+	}{
+		{
+			name:     "zero temperature",
+			t:        0,
+			expected: "0.0",
+		},
+		{
+			name:     "temperature with no decimal place",
+			t:        200,
+			expected: "20.0",
+		},
+		{
+			name:     "temperature with decimal place",
+			t:        207,
+			expected: "20.7",
+		},
+		{
+			name:     "negative temperature",
+			t:        -23,
+			expected: "-2.3",
+		},
+		{
+			name:     "zero whole number with non-zero fractional",
+			t:        5,
+			expected: "0.5",
+		},
+		{
+			name:     "negative zero whole number with non-zero fractional",
+			t:        -5,
+			expected: "-0.5",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if s := test.t.String(); s != test.expected {
+				t.Errorf("actual string: %s, expected string: %s", s, test.expected)
+			}
+		})
+	}
+}
+
 func TestNewInfo(t *testing.T) {
-	i := NewInfo(1.5)
+	i := NewInfo(15)
 	expected := Info{
 		Count: 1,
-		Sum:   1.5,
-		Min:   1.5,
-		Max:   1.5,
+		Sum:   15,
+		Min:   15,
+		Max:   15,
 	}
 	if *i != expected {
 		t.Errorf("actual info: %+v, expected info: %+v", *i, expected)
@@ -29,48 +75,48 @@ func TestInfoUpdate(t *testing.T) {
 			name: "updating the sum",
 			info: Info{
 				Count: 2,
-				Sum:   100,
+				Sum:   1000,
 				Min:   0,
-				Max:   100,
+				Max:   1000,
 			},
-			temperature: 10,
+			temperature: 100,
 			expected: Info{
 				Count: 3,
-				Sum:   110,
+				Sum:   1100,
 				Min:   0,
-				Max:   100,
+				Max:   1000,
 			},
 		},
 		{
 			name: "updating the min",
 			info: Info{
 				Count: 2,
-				Sum:   100,
+				Sum:   1000,
 				Min:   0,
-				Max:   100,
+				Max:   1000,
 			},
-			temperature: -100,
+			temperature: -1000,
 			expected: Info{
 				Count: 3,
 				Sum:   0,
-				Min:   -100,
-				Max:   100,
+				Min:   -1000,
+				Max:   1000,
 			},
 		},
 		{
 			name: "updating the max",
 			info: Info{
 				Count: 2,
-				Sum:   100,
+				Sum:   1000,
 				Min:   0,
-				Max:   100,
+				Max:   1000,
 			},
-			temperature: 200,
+			temperature: 2000,
 			expected: Info{
 				Count: 3,
-				Sum:   300,
+				Sum:   3000,
 				Min:   0,
-				Max:   200,
+				Max:   2000,
 			},
 		},
 	}
@@ -96,14 +142,14 @@ func TestStationInfoAddInfo(t *testing.T) {
 			stationInfo: StationInfo{},
 			measurement: Measurement{
 				Station:     "Beijing",
-				Temperature: 100,
+				Temperature: 10000,
 			},
 			expected: StationInfo{
 				"Beijing": &Info{
 					Count: 1,
-					Sum:   100,
-					Max:   100,
-					Min:   100,
+					Sum:   10000,
+					Max:   10000,
+					Min:   10000,
 				},
 			},
 		},
@@ -112,21 +158,21 @@ func TestStationInfoAddInfo(t *testing.T) {
 			stationInfo: StationInfo{
 				"Beijing": &Info{
 					Count: 1,
-					Sum:   100,
-					Max:   100,
-					Min:   100,
+					Sum:   1000,
+					Max:   1000,
+					Min:   1000,
 				},
 			},
 			measurement: Measurement{
 				Station:     "Beijing",
-				Temperature: 50.5,
+				Temperature: 505,
 			},
 			expected: StationInfo{
 				"Beijing": &Info{
 					Count: 2,
-					Sum:   150.5,
-					Max:   100,
-					Min:   50.5,
+					Sum:   1505,
+					Max:   1000,
+					Min:   505,
 				},
 			},
 		},
@@ -152,9 +198,9 @@ func TestStationInfoGenerateReport(t *testing.T) {
 			stationInfo: StationInfo{
 				"Beijing": &Info{
 					Count: 10,
-					Sum:   1000,
+					Sum:   10000,
 					Min:   0,
-					Max:   500.5,
+					Max:   5005,
 				},
 				"Ḩamīdīyeh": &Info{
 					Count: 1,
@@ -164,9 +210,9 @@ func TestStationInfoGenerateReport(t *testing.T) {
 				},
 				"New York": &Info{
 					Count: 10,
-					Sum:   20,
+					Sum:   200,
 					Min:   0,
-					Max:   40,
+					Max:   400,
 				},
 			},
 			report: "Beijing;0.0;100.0;500.5\nNew York;0.0;2.0;40.0\nḨamīdīyeh;0.0;0.0;0.0",
@@ -192,7 +238,7 @@ func TestParseMeasurement(t *testing.T) {
 			line: "Beijing;70.5",
 			measurement: Measurement{
 				Station:     "Beijing",
-				Temperature: 70.5,
+				Temperature: 705,
 			},
 		},
 		{
@@ -200,7 +246,7 @@ func TestParseMeasurement(t *testing.T) {
 			line: "New York;70.5",
 			measurement: Measurement{
 				Station:     "New York",
-				Temperature: 70.5,
+				Temperature: 705,
 			},
 		},
 		{
@@ -208,7 +254,7 @@ func TestParseMeasurement(t *testing.T) {
 			line: "Ḩamīdīyeh;70.5",
 			measurement: Measurement{
 				Station:     "Ḩamīdīyeh",
-				Temperature: 70.5,
+				Temperature: 705,
 			},
 		},
 		{
@@ -216,7 +262,7 @@ func TestParseMeasurement(t *testing.T) {
 			line: "Paris;-10.2",
 			measurement: Measurement{
 				Station:     "Paris",
-				Temperature: -10.2,
+				Temperature: -102,
 			},
 		},
 		{
@@ -224,7 +270,23 @@ func TestParseMeasurement(t *testing.T) {
 			line: "Berlin;0.0",
 			measurement: Measurement{
 				Station:     "Berlin",
-				Temperature: 0.0,
+				Temperature: 0,
+			},
+		},
+		{
+			name: "positive temperature with zero whole number component and non-zero fractional component",
+			line: "Rome;0.7",
+			measurement: Measurement{
+				Station:     "Rome",
+				Temperature: 7,
+			},
+		},
+		{
+			name: "negative temperature with zero whole number component and non-zero fractional component",
+			line: "Rome;-0.7",
+			measurement: Measurement{
+				Station:     "Rome",
+				Temperature: -7,
 			},
 		},
 	}
@@ -250,9 +312,9 @@ func TestStationReport(t *testing.T) {
 			station: "Beijing",
 			info: Info{
 				Count: 5,
-				Sum:   100.5,
-				Min:   10.1,
-				Max:   30,
+				Sum:   1005,
+				Min:   101,
+				Max:   300,
 			},
 			report: "Beijing;10.1;20.1;30.0",
 		},
@@ -261,9 +323,9 @@ func TestStationReport(t *testing.T) {
 			station: "New York",
 			info: Info{
 				Count: 5,
-				Sum:   100.5,
-				Min:   10.1,
-				Max:   30,
+				Sum:   1005,
+				Min:   101,
+				Max:   300,
 			},
 			report: "New York;10.1;20.1;30.0",
 		},
@@ -272,9 +334,9 @@ func TestStationReport(t *testing.T) {
 			station: "Ḩamīdīyeh",
 			info: Info{
 				Count: 5,
-				Sum:   100.5,
-				Min:   10.1,
-				Max:   30,
+				Sum:   1005,
+				Min:   101,
+				Max:   300,
 			},
 			report: "Ḩamīdīyeh;10.1;20.1;30.0",
 		},
@@ -283,9 +345,9 @@ func TestStationReport(t *testing.T) {
 			station: "Beijing",
 			info: Info{
 				Count: 1,
-				Sum:   10,
-				Min:   10,
-				Max:   10,
+				Sum:   100,
+				Min:   100,
+				Max:   100,
 			},
 			report: "Beijing;10.0;10.0;10.0",
 		},
@@ -294,11 +356,11 @@ func TestStationReport(t *testing.T) {
 			station: "Beijing",
 			info: Info{
 				Count: 4,
-				Sum:   -800,
-				Min:   -300,
-				Max:   -100,
+				Sum:   -8000,
+				Min:   -3005,
+				Max:   -1007,
 			},
-			report: "Beijing;-300.0;-200.0;-100.0",
+			report: "Beijing;-300.5;-200.0;-100.7",
 		},
 	}
 	for _, test := range tests {
