@@ -362,6 +362,50 @@ func TestStationReport(t *testing.T) {
 			},
 			report: "Beijing;-300.5;-200.0;-100.7",
 		},
+		{
+			name:    "rounded down mean",
+			station: "Madrid",
+			info: Info{
+				Count: 7,
+				Sum:   107,
+				Min:   -7,
+				Max:   120,
+			},
+			report: "Madrid;-0.7;1.5;12.0",
+		},
+		{
+			name:    "negative rounded down mean",
+			station: "Madrid",
+			info: Info{
+				Count: 7,
+				Sum:   -107,
+				Min:   -120,
+				Max:   7,
+			},
+			report: "Madrid;-12.0;-1.5;0.7",
+		},
+		{
+			name:    "rounded up mean",
+			station: "Barcelona",
+			info: Info{
+				Count: 7,
+				Sum:   102,
+				Min:   -10,
+				Max:   200,
+			},
+			report: "Barcelona;-1.0;1.5;20.0",
+		},
+		{
+			name:    "negative rounded up mean",
+			station: "Barcelona",
+			info: Info{
+				Count: 7,
+				Sum:   -102,
+				Min:   -200,
+				Max:   10,
+			},
+			report: "Barcelona;-20.0;-1.5;1.0",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

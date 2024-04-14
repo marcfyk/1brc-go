@@ -75,6 +75,22 @@ func (i *Info) Update(temperature Temperature) {
 	i.Max = max(i.Max, temperature)
 }
 
+func (i Info) Mean() Temperature {
+	roundingDigit := (int(i.Sum) * 10 / int(i.Count)) % 10
+	if roundingDigit < 0 {
+		roundingDigit = -roundingDigit
+	}
+	mean := int(i.Sum) / int(i.Count)
+	if roundingDigit >= 5 {
+		if mean < 0 {
+			mean--
+		} else {
+			mean++
+		}
+	}
+	return Temperature(mean)
+}
+
 // StationInfo is map mapping station names to their aggregate data.
 type StationInfo map[Station]*Info
 
@@ -124,12 +140,11 @@ func ParseMeasurement(line string) Measurement {
 // StationReport formats a specific station's name, min, mean, and max, with 1 decimal precision.
 // This adheres to a single line in the output to stdout.
 func StationReport(station Station, info Info) string {
-	mean := info.Sum / Temperature(info.Count)
 	return fmt.Sprintf(
 		"%s;%s;%s;%s",
 		station,
 		info.Min,
-		mean,
+		info.Mean(),
 		info.Max,
 	)
 }
