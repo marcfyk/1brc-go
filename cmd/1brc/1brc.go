@@ -57,7 +57,7 @@ type Measurement struct {
 // Info contains the aggregate data of a station's recorded temperatures.
 type Info struct {
 	// Count is the number of occurences of this station's recorded temperature.
-	Count uint
+	Count uint32
 	// Sum is the sum of all recorded temperatures.
 	Sum TemperatureSum
 	// Min is the lowest recorded temperature for this station.
