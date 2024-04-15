@@ -44,7 +44,7 @@ func TestTemperatureString(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if s := test.t.String(); s != test.expected {
+			if s := TemperatureString(test.t); s != test.expected {
 				t.Errorf("actual string: %s, expected string: %s", s, test.expected)
 			}
 		})

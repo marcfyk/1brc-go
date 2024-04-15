@@ -12,14 +12,24 @@ import (
 // Station contains the station name as defined in the data input.
 type Station string
 
-// Temperature contains an integer representation of temperature.
+// Temperature contains an 16bit integer representation of temperature.
+//
 // |Temperature % 10| is the fractional component of the temperature.
+//
 // Temperature / 10 is the whole number component of the temperature.
-type Temperature int
+//
+// Temperature has a range of [-999, 999] that fits in an int16.
+type Temperature int16
+
+// TemperatureSum is accumulative int64 that holds the sum of Temperature.
+//
+// Since there are 1 billion expected temperatures, where Temperature is within [-999, 999],
+// the sum will fit in an int64.
+type TemperatureSum int64
 
 // String returns a string representation of the Temperature,
 // with as a number with 1 decimal placing.
-func (t Temperature) String() string {
+func TemperatureString(t Temperature) string {
 	isNegative := t < 0
 	whole := t / 10
 	frac := t % 10
@@ -49,7 +59,7 @@ type Info struct {
 	// Count is the number of occurences of this station's recorded temperature.
 	Count uint
 	// Sum is the sum of all recorded temperatures.
-	Sum Temperature
+	Sum TemperatureSum
 	// Min is the lowest recorded temperature for this station.
 	Min Temperature
 	// Max is the highest recorded temperature for this station.
@@ -61,7 +71,7 @@ type Info struct {
 func NewInfo(temperature Temperature) *Info {
 	return &Info{
 		Count: 1,
-		Sum:   temperature,
+		Sum:   TemperatureSum(temperature),
 		Min:   temperature,
 		Max:   temperature,
 	}
@@ -70,7 +80,7 @@ func NewInfo(temperature Temperature) *Info {
 // Update updates the aggregate data fields based on a new observed temperature.
 func (i *Info) Update(temperature Temperature) {
 	i.Count++
-	i.Sum += temperature
+	i.Sum += TemperatureSum(temperature)
 	i.Min = min(i.Min, temperature)
 	i.Max = max(i.Max, temperature)
 }
@@ -143,9 +153,9 @@ func StationReport(station Station, info Info) string {
 	return fmt.Sprintf(
 		"%s;%s;%s;%s",
 		station,
-		info.Min,
-		info.Mean(),
-		info.Max,
+		TemperatureString(info.Min),
+		TemperatureString(info.Mean()),
+		TemperatureString(info.Max),
 	)
 }
 
