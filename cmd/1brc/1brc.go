@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -128,22 +128,31 @@ func (s StationInfo) GenerateReport() string {
 	return strings.Join(output, "\n")
 }
 
-// ParseMeasurement parses a line from the input data and returns a Measurement.
-func ParseMeasurement(line string) Measurement {
-	s, tStr, _ := strings.Cut(line, ";")
-	isNegative := tStr[0] == '-'
-	whole, fraction, _ := strings.Cut(tStr, ".")
-	w, _ := strconv.Atoi(whole)
-	f, _ := strconv.Atoi(fraction)
-	t := w * 10
-	if isNegative {
-		t -= f
-	} else {
-		t += f
+// ParseMeasurement parses a byte slice representing a line of measurement from the input data
+// and returns a Measurement.
+func ParseMeasurement(b []byte) Measurement {
+	semicolon := slices.Index(b, ';')
+	isNegative := b[semicolon+1] == '-'
+	dot := len(b) - 2
+	var t Temperature
+	{
+		start := semicolon + 1
+		if isNegative {
+			start++
+		}
+		for i := start; i < len(b); i++ {
+			if i == dot {
+				continue
+			}
+			t = t*10 + Temperature(uint8(b[i])-uint8('0'))
+		}
+		if isNegative {
+			t = -t
+		}
 	}
 	return Measurement{
-		Station:     Station(s),
-		Temperature: Temperature(t),
+		Station:     Station(b[:semicolon]),
+		Temperature: t,
 	}
 }
 
@@ -166,8 +175,8 @@ func main() {
 	stationInfo := make(StationInfo)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := scanner.Text()
-		m := ParseMeasurement(line)
+		b := scanner.Bytes()
+		m := ParseMeasurement(b)
 		stationInfo.AddInfo(m)
 	}
 	fmt.Println(stationInfo.GenerateReport())

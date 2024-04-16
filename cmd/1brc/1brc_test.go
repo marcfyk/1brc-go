@@ -292,7 +292,7 @@ func TestParseMeasurement(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			m := ParseMeasurement(test.line)
+			m := ParseMeasurement([]byte(test.line))
 			if m != test.measurement {
 				t.Errorf("actual measurement: %+v, expected measurement: %+v", m, test.measurement)
 			}
