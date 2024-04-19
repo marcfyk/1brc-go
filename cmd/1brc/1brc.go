@@ -6,7 +6,6 @@ import (
 	"os"
 	"slices"
 	"sort"
-	"strings"
 )
 
 // Station contains the station name as defined in the data input.
@@ -26,24 +25,6 @@ type Temperature int16
 // Since there are 1 billion expected temperatures, where Temperature is within [-999, 999],
 // the sum will fit in an int64.
 type TemperatureSum int64
-
-// String returns a string representation of the Temperature,
-// with as a number with 1 decimal placing.
-func TemperatureString(t Temperature) string {
-	isNegative := t < 0
-	whole := t / 10
-	frac := t % 10
-	if isNegative {
-		if whole == 0 {
-			return fmt.Sprintf("-%d.%d", whole, -frac)
-		} else if frac < 0 {
-			return fmt.Sprintf("%d.%d", whole, -frac)
-		} else {
-			return fmt.Sprintf("%d.%d", whole, frac)
-		}
-	}
-	return fmt.Sprintf("%d.%d", whole, frac)
-}
 
 // Measurement is a struct containing a station name and it's recorded temperature.
 // It is equivalent to a single line in the data input.
@@ -113,19 +94,60 @@ func (s StationInfo) AddInfo(m Measurement) {
 	}
 }
 
-// GenerateReport returns the entire output of StationInfo in the correct format as a string.
+// AppendTemperatureToBuffer writes temperature to a byte buffer at the given cursor
+// and returns the new cursor position.
+func AppendTemperatureToBuffer(buffer []byte, cursor int, t Temperature) int {
+	n := int16(t)
+	if isNegative := n < 0; isNegative {
+		buffer[cursor] = '-'
+		cursor++
+		n = -n
+	}
+	if d := n / 100; d > 0 {
+		buffer[cursor] = byte(d + '0')
+		cursor++
+	}
+	buffer[cursor] = byte(n/10%10 + '0')
+	cursor++
+	buffer[cursor] = '.'
+	cursor++
+	buffer[cursor] = byte(n%10 + '0')
+	cursor++
+	return cursor
+}
+
+// GenerateReport returns the entire output of StationInfo in the ordered by station name as a string.
 // The string returned should be the entire output required to write to stdout.
 func (s StationInfo) GenerateReport() string {
 	stations := make([]Station, 0, len(s))
+	bufferSize := len(s) * (1 + 5 + 1 + 5 + 1 + 5 + 1) // each line has <station;digit;digit;digit>
 	for station := range s {
+		bufferSize += len([]byte(station))
 		stations = append(stations, station)
 	}
 	sort.Slice(stations, func(i, j int) bool { return stations[i] < stations[j] })
-	output := make([]string, len(stations))
+	b := make([]byte, bufferSize)
+	cursor := 0
 	for i, station := range stations {
-		output[i] = StationReport(station, *s[station])
+		for _, c := range []byte(station) {
+			b[cursor] = c
+			cursor++
+		}
+		b[cursor] = ';'
+		cursor++
+		cursor = AppendTemperatureToBuffer(b, cursor, s[station].Min)
+		b[cursor] = ';'
+		cursor++
+		cursor = AppendTemperatureToBuffer(b, cursor, s[station].Mean())
+		b[cursor] = ';'
+		cursor++
+		cursor = AppendTemperatureToBuffer(b, cursor, s[station].Max)
+		if i < len(stations)-1 {
+			b[cursor] = '\n'
+			cursor++
+		}
 	}
-	return strings.Join(output, "\n")
+	return string(b[:cursor])
 }
 
 // ParseMeasurement parses a byte slice representing a line of measurement from the input data
@@ -154,18 +176,6 @@ func ParseMeasurement(b []byte) Measurement {
 		Station:     Station(b[:semicolon]),
 		Temperature: t,
 	}
-}
-
-// StationReport formats a specific station's name, min, mean, and max, with 1 decimal precision.
-// This adheres to a single line in the output to stdout.
-func StationReport(station Station, info Info) string {
-	return fmt.Sprintf(
-		"%s;%s;%s;%s",
-		station,
-		TemperatureString(info.Min),
-		TemperatureString(info.Mean()),
-		TemperatureString(info.Max),
-	)
 }
 
 func main() {
