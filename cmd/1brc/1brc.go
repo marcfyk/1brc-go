@@ -67,11 +67,12 @@ func (i *Info) Update(temperature Temperature) {
 }
 
 func (i Info) Mean() Temperature {
-	roundingDigit := (int(i.Sum) * 10 / int(i.Count)) % 10
+	sum, count := int32(i.Sum), int32(i.Count)
+	roundingDigit := (sum * 10 / count) % 10
 	if roundingDigit < 0 {
 		roundingDigit = -roundingDigit
 	}
-	mean := int(i.Sum) / int(i.Count)
+	mean := sum / count
 	if roundingDigit >= 5 {
 		if mean < 0 {
 			mean--
