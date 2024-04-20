@@ -4,6 +4,26 @@ This changelog serves to document the iterative progress and optimizations over 
 
 ---
 
+## 21-04-2024
+
+- Bug fixes
+    - Calculation of temperature mean was not rounding correctly due to integer division of sum and count.
+      For example, an average of `1.57...` should be rounded to `1.6` but was incorrectly rounded to `1.5`.
+      This issue has been fixed with temperature mean rounding up/down correctly based on the rounding digit.
+- Optimizations:
+    - `Temperature` is changed from an `int` to `int16` to occupy less memory due to `Temperature` being bounded to `[-999, 999]`.
+    - `TemperatureSum` type is added as an `int64` to track the sum of `Temperature` as it has accept a range of `[1_000_000_000 * 999, 1_000_000_000 * -999]`.
+    - `Count` is changed from `uint` to `uint32` to prevent unnecessary allocation of `uint64` on 64bit systems as only `uint32` is needed to accept a range of `[0, 1_000_000_000]`.
+    - Measurement parsing is now done directly on the byte slice line from the file's buffered scanner to reduce unnecessary memory allocations.
+      Previously, the line is read as a string before being subsequent string operations are performed to parse each segment of the measurement, which performs many unnecessary allocations.
+      Now, all parsing of each segment of the measurement is done directly on the byte slice by exploiting the constraints of the input.
+    - Writing to output now uses a single allocated buffer using a computed size to reduce unnecessary memory allocations.
+      Previously, output was written by first allocating strings for each (station, min, mean, max) set before joining these strings into another allocated string joining them with newlines.
+      Now, a single allocated buffer is used to write all output before allocating once into a string.
+      The size of the buffer is sufficient for the entire output by estimating the size of the output.
+      The estimation of the output is done by computing the sum of station names, the necessary newlines and `;` delimiters, and assuming each temperature is 5 digits long, which is the max length of a temperature.
+      The max length of the temperature is 5 when it is a negative temperature less than `-9.9`, such as `-10.7` and `-99.9`.
+
 ## 14-04-2024
 
 - The contexts where we split strings on a delimiter guarantees that there aways strictly 1 delimiter in the string and that splits only into 2 substrings.
