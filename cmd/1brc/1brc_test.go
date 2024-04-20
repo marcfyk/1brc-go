@@ -5,52 +5,6 @@ import (
 	"testing"
 )
 
-func TestTemperatureString(t *testing.T) {
-	tests := []struct {
-		name     string
-		t        Temperature
-		expected string
-	}{
-		{
-			name:     "zero temperature",
-			t:        0,
-			expected: "0.0",
-		},
-		{
-			name:     "temperature with no decimal place",
-			t:        200,
-			expected: "20.0",
-		},
-		{
-			name:     "temperature with decimal place",
-			t:        207,
-			expected: "20.7",
-		},
-		{
-			name:     "negative temperature",
-			t:        -23,
-			expected: "-2.3",
-		},
-		{
-			name:     "zero whole number with non-zero fractional",
-			t:        5,
-			expected: "0.5",
-		},
-		{
-			name:     "negative zero whole number with non-zero fractional",
-			t:        -5,
-			expected: "-0.5",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if s := test.t.String(); s != test.expected {
-				t.Errorf("actual string: %s, expected string: %s", s, test.expected)
-			}
-		})
-	}
-}
-
 func TestNewInfo(t *testing.T) {
 	i := NewInfo(15)
 	expected := Info{
@@ -76,15 +30,15 @@ func TestInfoUpdate(t *testing.T) {
 			info: Info{
 				Count: 2,
 				Sum:   1000,
-				Min:   0,
-				Max:   1000,
+				Min:   1,
+				Max:   999,
 			},
 			temperature: 100,
 			expected: Info{
 				Count: 3,
 				Sum:   1100,
-				Min:   0,
-				Max:   1000,
+				Min:   1,
+				Max:   999,
 			},
 		},
 		{
@@ -92,31 +46,31 @@ func TestInfoUpdate(t *testing.T) {
 			info: Info{
 				Count: 2,
 				Sum:   1000,
-				Min:   0,
-				Max:   1000,
+				Min:   1,
+				Max:   999,
 			},
-			temperature: -1000,
+			temperature: -999,
 			expected: Info{
 				Count: 3,
-				Sum:   0,
-				Min:   -1000,
-				Max:   1000,
+				Sum:   1,
+				Min:   -999,
+				Max:   999,
 			},
 		},
 		{
 			name: "updating the max",
 			info: Info{
 				Count: 2,
-				Sum:   1000,
+				Sum:   999,
 				Min:   0,
-				Max:   1000,
+				Max:   999,
 			},
-			temperature: 2000,
+			temperature: 550,
 			expected: Info{
 				Count: 3,
-				Sum:   3000,
+				Sum:   1549,
 				Min:   0,
-				Max:   2000,
+				Max:   999,
 			},
 		},
 	}
@@ -142,14 +96,14 @@ func TestStationInfoAddInfo(t *testing.T) {
 			stationInfo: StationInfo{},
 			measurement: Measurement{
 				Station:     "Beijing",
-				Temperature: 10000,
+				Temperature: 999,
 			},
 			expected: StationInfo{
 				"Beijing": &Info{
 					Count: 1,
-					Sum:   10000,
-					Max:   10000,
-					Min:   10000,
+					Sum:   999,
+					Min:   999,
+					Max:   999,
 				},
 			},
 		},
@@ -158,9 +112,9 @@ func TestStationInfoAddInfo(t *testing.T) {
 			stationInfo: StationInfo{
 				"Beijing": &Info{
 					Count: 1,
-					Sum:   1000,
-					Max:   1000,
-					Min:   1000,
+					Sum:   999,
+					Min:   999,
+					Max:   999,
 				},
 			},
 			measurement: Measurement{
@@ -170,8 +124,8 @@ func TestStationInfoAddInfo(t *testing.T) {
 			expected: StationInfo{
 				"Beijing": &Info{
 					Count: 2,
-					Sum:   1505,
-					Max:   1000,
+					Sum:   1504,
+					Max:   999,
 					Min:   505,
 				},
 			},
@@ -194,28 +148,184 @@ func TestStationInfoGenerateReport(t *testing.T) {
 		report      string
 	}{
 		{
-			name: "formats values to 1 decimal point",
+			name: "zero temperature",
 			stationInfo: StationInfo{
-				"Beijing": &Info{
-					Count: 10,
-					Sum:   10000,
-					Min:   0,
-					Max:   5005,
-				},
-				"Ḩamīdīyeh": &Info{
+				"London": {
 					Count: 1,
 					Sum:   0,
 					Min:   0,
 					Max:   0,
 				},
-				"New York": &Info{
+			},
+			report: "London;0.0;0.0;0.0",
+		},
+		{
+			name: "temperature with no decimal place",
+			stationInfo: StationInfo{
+				"Liverpool": {
+					Count: 1,
+					Sum:   200,
+					Min:   200,
+					Max:   200,
+				},
+			},
+			report: "Liverpool;20.0;20.0;20.0",
+		},
+		{
+			name: "temperature with decimal place",
+			stationInfo: StationInfo{
+				"Manchester": {
+					Count: 1,
+					Sum:   207,
+					Min:   207,
+					Max:   207,
+				},
+			},
+			report: "Manchester;20.7;20.7;20.7",
+		},
+		{
+			name: "negative temperature",
+			stationInfo: StationInfo{
+				"Whales": {
+					Count: 1,
+					Sum:   -23,
+					Min:   -23,
+					Max:   -23,
+				},
+			},
+			report: "Whales;-2.3;-2.3;-2.3",
+		},
+		{
+			name: "zero whole number with non-zero fracional",
+			stationInfo: StationInfo{
+				"Venice": {
+					Count: 1,
+					Sum:   5,
+					Min:   5,
+					Max:   5,
+				},
+			},
+			report: "Venice;0.5;0.5;0.5",
+		},
+		{
+			name: "negative zero whole number with non-zero fracional",
+			stationInfo: StationInfo{
+				"Venice": {
+					Count: 1,
+					Sum:   -5,
+					Min:   -5,
+					Max:   -5,
+				},
+			},
+			report: "Venice;-0.5;-0.5;-0.5",
+		},
+		{
+			name: "single word station with multiple counts",
+			stationInfo: StationInfo{
+				"Florence": {
+					Count: 5,
+					Sum:   1005,
+					Min:   101,
+					Max:   300,
+				},
+			},
+			report: "Florence;10.1;20.1;30.0",
+		},
+		{
+			name: "station with spaces",
+			stationInfo: StationInfo{
+				"New York": {
+					Count: 5,
+					Sum:   1005,
+					Min:   101,
+					Max:   300,
+				},
+			},
+			report: "New York;10.1;20.1;30.0",
+		},
+		{
+			name: "station with unicode",
+			stationInfo: StationInfo{
+				"Ḩamīdīyeh": {
+					Count: 5,
+					Sum:   1005,
+					Min:   101,
+					Max:   300,
+				},
+			},
+			report: "Ḩamīdīyeh;10.1;20.1;30.0",
+		},
+		{
+			name: "rounded down mean",
+			stationInfo: StationInfo{
+				"Barcelona": {
+					Count: 7,
+					Sum:   107,
+					Min:   -7,
+					Max:   120,
+				},
+			},
+			report: "Barcelona;-0.7;1.5;12.0",
+		},
+		{
+			name: "negative rounded down mean",
+			stationInfo: StationInfo{
+				"Barcelona": {
+					Count: 7,
+					Sum:   -107,
+					Min:   -120,
+					Max:   7,
+				},
+			},
+			report: "Barcelona;-12.0;-1.5;0.7",
+		},
+		{
+			name: "rounded up mean",
+			stationInfo: StationInfo{
+				"Madrid": {
+					Count: 7,
+					Sum:   102,
+					Min:   -10,
+					Max:   200,
+				},
+			},
+			report: "Madrid;-1.0;1.5;20.0",
+		},
+		{
+			name: "negative rounded up mean",
+			stationInfo: StationInfo{
+				"Madrid": {
+					Count: 7,
+					Sum:   -102,
+					Min:   -200,
+					Max:   10,
+				},
+			},
+			report: "Madrid;-20.0;-1.5;1.0",
+		},
+		{
+			name: "formats multiple values separated by newlines sorted alphabetically",
+			stationInfo: StationInfo{
+				"Beijing": {
+					Count: 10,
+					Sum:   9990,
+					Min:   0,
+					Max:   999,
+				},
+				"Ḩamīdīyeh": {
+					Count: 1,
+					Sum:   0,
+					Min:   0,
+					Max:   0,
+				},
+				"New York": {
 					Count: 10,
 					Sum:   200,
 					Min:   0,
 					Max:   400,
 				},
 			},
-			report: "Beijing;0.0;100.0;500.5\nNew York;0.0;2.0;40.0\nḨamīdīyeh;0.0;0.0;0.0",
+			report: "Beijing;0.0;99.9;99.9\nNew York;0.0;2.0;40.0\nḨamīdīyeh;0.0;0.0;0.0",
 		},
 	}
 	for _, test := range tests {
@@ -292,81 +402,9 @@ func TestParseMeasurement(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			m := ParseMeasurement(test.line)
+			m := ParseMeasurement([]byte(test.line))
 			if m != test.measurement {
 				t.Errorf("actual measurement: %+v, expected measurement: %+v", m, test.measurement)
-			}
-		})
-	}
-}
-
-func TestStationReport(t *testing.T) {
-	tests := []struct {
-		name    string
-		station Station
-		info    Info
-		report  string
-	}{
-		{
-			name:    "single word station with multiple counts",
-			station: "Beijing",
-			info: Info{
-				Count: 5,
-				Sum:   1005,
-				Min:   101,
-				Max:   300,
-			},
-			report: "Beijing;10.1;20.1;30.0",
-		},
-		{
-			name:    "station with spaces",
-			station: "New York",
-			info: Info{
-				Count: 5,
-				Sum:   1005,
-				Min:   101,
-				Max:   300,
-			},
-			report: "New York;10.1;20.1;30.0",
-		},
-		{
-			name:    "station with unicode",
-			station: "Ḩamīdīyeh",
-			info: Info{
-				Count: 5,
-				Sum:   1005,
-				Min:   101,
-				Max:   300,
-			},
-			report: "Ḩamīdīyeh;10.1;20.1;30.0",
-		},
-		{
-			name:    "single count",
-			station: "Beijing",
-			info: Info{
-				Count: 1,
-				Sum:   100,
-				Min:   100,
-				Max:   100,
-			},
-			report: "Beijing;10.0;10.0;10.0",
-		},
-		{
-			name:    "negative values",
-			station: "Beijing",
-			info: Info{
-				Count: 4,
-				Sum:   -8000,
-				Min:   -3005,
-				Max:   -1007,
-			},
-			report: "Beijing;-300.5;-200.0;-100.7",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if report := StationReport(test.station, test.info); report != test.report {
-				t.Errorf("actual report: %+v, expected report: %+v", report, test.report)
 			}
 		})
 	}
