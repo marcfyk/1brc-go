@@ -4,6 +4,12 @@ This changelog serves to document the iterative progress and optimizations over 
 
 ---
 
+## 02-05-2024
+
+- Optimizations
+    - Temperature parsing is directly computed based on the offset of the delimiter, `;`, from the end of the line.
+      This is more efficient than manually iterating through the bytes representing the temperature after `;` to calculate the temperature.
+
 ## 21-04-2024
 
 - Bug fixes
