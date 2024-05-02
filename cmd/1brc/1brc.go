@@ -155,23 +155,18 @@ func (s StationInfo) GenerateReport() string {
 // and returns a Measurement.
 func ParseMeasurement(b []byte) Measurement {
 	semicolon := slices.Index(b, ';')
-	isNegative := b[semicolon+1] == '-'
-	dot := len(b) - 2
 	var t Temperature
-	{
-		start := semicolon + 1
-		if isNegative {
-			start++
+	switch semicolon {
+	case len(b) - 4:
+		t = Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0')
+	case len(b) - 5:
+		if b[len(b)-4] == '-' {
+			t = -(Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0'))
+		} else {
+			t = Temperature(b[len(b)-4]-'0')*100 + Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0')
 		}
-		for i := start; i < len(b); i++ {
-			if i == dot {
-				continue
-			}
-			t = t*10 + Temperature(uint8(b[i])-uint8('0'))
-		}
-		if isNegative {
-			t = -t
-		}
+	case len(b) - 6:
+		t = -(Temperature(b[len(b)-4]-'0')*100 + Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0'))
 	}
 	return Measurement{
 		Station:     Station(b[:semicolon]),
