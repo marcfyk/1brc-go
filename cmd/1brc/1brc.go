@@ -1,8 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"sort"
@@ -178,12 +180,38 @@ func main() {
 	fp := os.Args[1]
 	f, _ := os.Open(fp)
 	defer f.Close()
+	b := make([]byte, 1<<26)
+	cursor := 0
 	stationInfo := make(StationInfo)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		b := scanner.Bytes()
-		m := ParseMeasurement(b)
-		stationInfo.AddInfo(m)
+	for {
+		n, err := f.Read(b[cursor:])
+		if err != nil && !errors.Is(err, io.EOF) {
+			break
+		}
+		if n == 0 {
+			break
+		}
+		chunk := b[:cursor+n]
+		index := bytes.LastIndexByte(chunk, '\n')
+		if index == -1 {
+			break
+		}
+		unprocessed := chunk[index+1:]
+		chunk = chunk[:index]
+		for {
+			index := slices.Index(chunk, '\n')
+			if index == -1 {
+				if len(chunk) > 0 {
+					m := ParseMeasurement(chunk)
+					stationInfo.AddInfo(m)
+				}
+				break
+			}
+			m := ParseMeasurement(chunk[:index])
+			stationInfo.AddInfo(m)
+			chunk = chunk[index+1:]
+		}
+		cursor = copy(b, unprocessed)
 	}
 	fmt.Println(stationInfo.GenerateReport())
 }
