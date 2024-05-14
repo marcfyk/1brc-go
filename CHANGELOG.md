@@ -4,6 +4,13 @@ This changelog serves to document the iterative progress and optimizations over 
 
 ---
 
+## 15-05-2024
+
+- Optimizations
+    - Replace `bufio.Scanner` with custom byte slice buffer with a size of `1<<25` when reading from the input file.
+      Parsing measurements are now done directly on the byte chunk of multiple measurements instead of readling line by line from the buffer.
+      These changes reduce unnecessary copying and allocation of data read from the buffer.
+
 ## 02-05-2024
 
 - Optimizations
