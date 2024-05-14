@@ -180,7 +180,7 @@ func main() {
 	fp := os.Args[1]
 	f, _ := os.Open(fp)
 	defer f.Close()
-	b := make([]byte, 1<<26)
+	b := make([]byte, 1<<25)
 	cursor := 0
 	stationInfo := make(StationInfo)
 	for {
