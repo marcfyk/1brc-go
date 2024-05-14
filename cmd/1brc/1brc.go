@@ -1,8 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"sort"
@@ -151,39 +153,61 @@ func (s StationInfo) GenerateReport() string {
 	return string(b[:cursor])
 }
 
-// ParseMeasurement parses a byte slice representing a line of measurement from the input data
-// and returns a Measurement.
-func ParseMeasurement(b []byte) Measurement {
-	semicolon := slices.Index(b, ';')
-	var t Temperature
-	switch semicolon {
-	case len(b) - 4:
-		t = Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0')
-	case len(b) - 5:
-		if b[len(b)-4] == '-' {
-			t = -(Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0'))
-		} else {
-			t = Temperature(b[len(b)-4]-'0')*100 + Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0')
-		}
-	case len(b) - 6:
-		t = -(Temperature(b[len(b)-4]-'0')*100 + Temperature(b[len(b)-3]-'0')*10 + Temperature(b[len(b)-1]-'0'))
-	}
-	return Measurement{
-		Station:     Station(b[:semicolon]),
-		Temperature: t,
-	}
-}
-
 func main() {
 	fp := os.Args[1]
 	f, _ := os.Open(fp)
 	defer f.Close()
+	b := make([]byte, 1<<25)
+	cursor := 0
 	stationInfo := make(StationInfo)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		b := scanner.Bytes()
-		m := ParseMeasurement(b)
-		stationInfo.AddInfo(m)
+	for {
+		n, err := f.Read(b[cursor:])
+		if err != nil && !errors.Is(err, io.EOF) {
+			break
+		}
+		if n == 0 {
+			break
+		}
+		chunk := b[:cursor+n]
+		index := bytes.LastIndexByte(chunk, '\n')
+		if index == -1 {
+			break
+		}
+		unprocessed := chunk[index+1:]
+		chunk = chunk[:index]
+		for {
+			semicolon := slices.Index(chunk, ';')
+			if semicolon == -1 {
+				break
+			}
+			newline := slices.Index(chunk, '\n')
+			if newline == -1 {
+				newline = len(chunk)
+			}
+			var t Temperature
+			switch semicolon {
+			case newline - 4:
+				t = Temperature(chunk[newline-3]-'0')*10 + Temperature(chunk[newline-1]-'0')
+			case newline - 5:
+				if chunk[newline-4] == '-' {
+					t = -(Temperature(chunk[newline-3]-'0')*10 + Temperature(chunk[newline-1]-'0'))
+				} else {
+					t = Temperature(chunk[newline-4]-'0')*100 + Temperature(chunk[newline-3]-'0')*10 + Temperature(chunk[newline-1]-'0')
+				}
+			case newline - 6:
+				t = -(Temperature(chunk[newline-4]-'0')*100 + Temperature(chunk[newline-3]-'0')*10 + Temperature(chunk[newline-1]-'0'))
+			}
+			m := Measurement{
+				Station:     Station(chunk[:semicolon]),
+				Temperature: t,
+			}
+			stationInfo.AddInfo(m)
+			if newline == len(chunk) {
+				break
+			}
+			chunk = chunk[newline+1:]
+		}
+		cursor = copy(b, unprocessed)
 	}
 	fmt.Println(stationInfo.GenerateReport())
 }
